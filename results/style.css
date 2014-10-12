@@ -1,0 +1,43 @@
+body {
+	padding: 10pt;
+	font-family: Helvetica;
+	font-size: 10pt;
+	color: #202020;
+}
+
+table, tr, td {
+	font-size: inherit;
+	white-space: nowrap;
+	border: solid 1px lightgray;
+	margin: 0;
+	padding: 2pt;
+	border-collapse: collapse;
+	background-color: transparent;
+}
+
+tr:nth-child(odd) {
+	background-color: #F5FFF5;
+}
+
+tr:nth-child(even) {
+	background-color: #E0FAE0;
+}
+
+tr.heading {
+	background-color: black;
+	color: white;
+	font-weight: bold;
+}
+
+#districts_data td:nth-child(3), #districts_data td:nth-child(4), #districts_data td:nth-child(5), #districts_data td:nth-child(6), #districts_data td:nth-child(7) {
+	text-align: center;
+}
+
+tr.cancelled td {
+	background-color: #FF8888;
+
+}
+
+#districts_data tr.cancelled td {
+	text-align: left;
+}

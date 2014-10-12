@@ -1,0 +1,98 @@
+districtsCount = 225;
+jsonDateFormat = new java.text.SimpleDateFormat("MMM d, yyyy HH:mm:ss a");
+dateTimeFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+dateFormat = new java.text.SimpleDateFormat("yyyy-MM-dd");
+now = new Date();
+slurper = new groovy.json.JsonSlurper();
+resb = new StringBuilder("<html><head><meta charset='UTF-8'><link rel='stylesheet' type='text/css' href='style.css'> </head><body>");
+resbcd = new StringBuilder(resb.toString());
+progb = new StringBuilder(resb.toString());
+resb.append("<table id='districts_data'><tr class='heading'><td>Дані за</td><td>#</td><td>Кандидатів</td><td>Скасовано</td><td>Балотуються</td><td>Від партій</td><td>Самовисування</td>")
+resb.append("<td>Округ: Назва</td><td>Область</td><td>Центр</td><td>Межі</td></tr>");
+resbcd.append("<table id='candidates_data'><tr class='heading'><td>#</td><td>ПІБ</td><td>Від партії</td>");
+resbcd.append("<td>Дата реєстрації</td><td>Дата скасування</td><td>Причина скасування</td><td>Скасовано?</td><td>Дата народження</td><td>Вік</td><td>Місце народження</td>");
+resbcd.append("<td>Громадянство</td><td>5 років в Україні?</td><td>Освіта</td><td>Робота/Посада</td><td>Партійність</td><td>Місце проживання</td><td>Судимості</td><td>Програма</td>");
+resbcd.append("</tr>");
+
+progb.append("<table>");
+
+for(int i=1;i<=districtsCount;i++) {
+f = new File(".", "district_"+i+".json");
+if(f.exists()) {
+println "Parsing data for district "+i;
+data = slurper.parseText(f.text);
+println "Generating content";
+resb.append("<tr>")
+resb.append("<td>").append(dateTimeFormat.format(jsonDateFormat.parse(data.lastUpdateDate))).append("</td>")
+resb.append("<td>").append(data.districtInfo.number).append("</td>")
+
+resb.append("<td>").append(data.districtInfo.totalCandidatesRegistered).append("</td>")
+resb.append("<td>").append(data.districtInfo.totalCandidatesCancelled).append("</td>")
+resb.append("<td>").append(data.districtInfo.totalCandidatesInElections).append("</td>")
+resb.append("<td>").append(data.districtInfo.partyCandidatesInElections).append("</td>")
+resb.append("<td>").append(data.districtInfo.selfproposedCandidatesInElections).append("</td>")
+
+resb.append("<td>").append(data.districtInfo.title).append("</td>")
+resb.append("<td>").append(data.districtInfo.region).append("</td>")
+resb.append("<td>").append(data.districtInfo.center).append("</td>")
+resb.append("<td>").append(data.districtInfo.range).append("</td>");
+resb.append("</tr>");
+
+resbcd.append("<tr class='heading'>");
+resbcd.append("<td colspan='18'>").append(data.districtInfo.title).append(" ").append(data.districtInfo.region).append(" - ").append(data.districtInfo.center).append(". ").append(data.districtInfo.range).append("</td>");
+resbcd.append("</tr>");
+
+data.candidatesInfo.each{ candidateInfo ->
+resbcd.append("<tr").append(candidateInfo.cancelled?" class='cancelled' ":"").append(">");
+resbcd.append("<td>").append(data.districtInfo.number).append("</td>");
+resbcd.append("<td>").append(candidateInfo.fullName).append("</td>");
+resbcd.append("<td>").append(candidateInfo.partyListElection).append("</td>");
+resbcd.append("<td>").append(dateFormat.format(jsonDateFormat.parse(candidateInfo.registrationDate))).append("</td>");
+resbcd.append("<td>").append(candidateInfo.cancellationDate!=null?dateFormat.format(jsonDateFormat.parse(candidateInfo.cancellationDate)):"").append("</td>");
+resbcd.append("<td>").append(candidateInfo.cancellationReason!=null?candidateInfo.cancellationReason:"").append("</td>");
+resbcd.append("<td>").append(candidateInfo.cancelled?"Так":"").append("</td>");
+dateOfBirth = jsonDateFormat.parse(candidateInfo.dateOfBirth);
+resbcd.append("<td>").append(dateFormat.format(dateOfBirth)).append("</td>");
+age = now.year - dateOfBirth.year;
+if(dateOfBirth.month>now.month || (dateOfBirth.month==now.month && dateOfBirth.day>=now.day)) { age++ };
+resbcd.append("<td>").append(age).append("</td>");
+resbcd.append("<td>").append(candidateInfo.placeOfBirth).append("</td>");
+resbcd.append("<td>").append(candidateInfo.citizenship).append("</td>");
+resbcd.append("<td>").append(candidateInfo.livesInCountry).append("</td>");
+resbcd.append("<td>").append(candidateInfo.education).append("</td>");
+resbcd.append("<td>").append(candidateInfo.occupation).append("</td>");
+resbcd.append("<td>").append(candidateInfo.partyMembership).append("</td>");
+resbcd.append("<td>").append(candidateInfo.address).append("</td>");
+resbcd.append("<td>").append(candidateInfo.criminalRecord).append("</td>");
+resbcd.append("<td><a href='").append(candidateInfo.programLink).append("'>Програма</a></td>");
+resbcd.append("</tr>");
+
+progb.append("<tr").append(candidateInfo.cancelled?" class='cancelled' ":"").append(">")
+progb.append("<td>#").append(data.districtInfo.number).append(" - ").append(candidateInfo.fullName);
+progb.append(" (").append(age).append(" років, ").append(candidateInfo.education);
+progb.append(") ").append(candidateInfo.partyMembership).append("/").append(candidateInfo.partyListElection);
+progb.append(". ").append(candidateInfo.placeOfBirth).append(" => ").append(candidateInfo.address);
+progb.append(". ").append(candidateInfo.occupation);
+progb.append("</td></tr>");
+if(candidateInfo.programText!=null && candidateInfo.programText.trim().length()>0) {
+progb.append("<tr><td>").append(candidateInfo.programText.replaceAll("[\n\r]", "<br/>")).append("</td></tr>");
+} else {
+progb.append("<tr><td>----</td></tr>");
+}
+}
+} else {
+resb.append("<tr class='cancelled'><td></td><td>").append(i).append("<td colspan='9'>Дані по округу відсутні на сайті ЦВК</td></tr>")
+}
+}
+
+if(true) {
+progb.append("</table></body></html>"); println "";
+resbcd.append("</table></body></html>"); println "";
+resb.append("</table></body></html>"); println "";
+new File(".", "index.html").text = resb.toString(); println "";
+new File(".", "candidates.html").text = resbcd.toString(); println "";
+new File(".", "programs.html").text = progb.toString(); println "";
+}
+
+println "\nAll done!"
+
