@@ -1,0 +1,108 @@
+MV.ld("/Users/mvmn/_my/_prog/_dev/_lib/mysql-connector-java-5.1.25/mysql-connector-java-5.1.25-bin.jar")
+MV.ld("/Users/mvmn/_my/_prog/_dev/play-1.2.7/framework/lib/c3p0-0.9.1.2.jar")
+
+if(true) {
+mySqlDriver = Class.forName("com.mysql.jdbc.Driver").newInstance();
+java.sql.DriverManager.registerDriver(mySqlDriver);
+
+jdbcUrl="jdbc:mysql://localhost/radaelections2014?useUnicode=true&characterEncoding=utf8";
+
+ds = new com.mchange.v2.c3p0.ComboPooledDataSource();
+ds.setJdbcUrl(jdbcUrl.toString());
+ds.setUser(javax.swing.JOptionPane.showInputDialog(null));
+ds.setPassword(javax.swing.JOptionPane.showInputDialog(null));
+
+c = ds.getConnection();
+
+createDistrict = """create table district (
+id int not null primary key auto_increment,
+number int not null,
+title nvarchar(255),
+regionname nvarchar(255),
+regioncenter nvarchar(255),
+regionrange longtext,
+totalreg int not null,
+totalcancel int not null,
+total int not null,
+fromparty int not null,
+selfproposed int not null
+);""";
+
+createCandidate = """create table candidate (id int not null primary key auto_increment, fullName nvarchar(255), programLink nvarchar(1024), programFile nvarchar(1024), programText longtext, partyListElection nvarchar(1024), registrationdate date, cancellationdate date, cancellationReason nvarchar(255), cancelled boolean,dateOfBirth date, placeOfBirth nvarchar(1024), citizenship nvarchar(255), livesInCountry nvarchar(255), education nvarchar(255), occupation nvarchar(1024), partyMembership nvarchar(1024), address nvarchar(1024), criminalRecord nvarchar(255))""";
+
+insertDistrict = "insert into district(number, title, regionname, regioncenter, regionrange, totalreg, totalcancel, total, fromparty, selfproposed) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+insertCandidate = "insert into candidate (fullName, programLink, programFile, programText, partyListElection, registrationDate, cancellationDate, cancellationReason, cancelled, dateOfBirth, placeOfBirth, citizenship, livesInCountry, education, occupation, partyMembership, address, criminalRecord) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+
+println "Init DB";
+c.createStatement().execute("drop table if exists district");
+c.createStatement().execute("drop table if exists candidate");
+c.createStatement().execute("drop table if exists cpimgfile");
+c.createStatement().execute(createDistrict);
+c.createStatement().execute(createCandidate);
+
+jsonDateFormat = new java.text.SimpleDateFormat("MMM d, yyyy HH:mm:ss a");
+districtsCount = 225;
+slurper = new groovy.json.JsonSlurper();
+for(int i=1;i<=districtsCount;i++) {
+ f = new File(".", "district_"+i+".json");
+ if(f.exists()) {
+  println "Inserting data for district "+i;
+  data = slurper.parseText(f.text);
+  stmt = c.prepareStatement(insertDistrict, java.sql.Statement.RETURN_GENERATED_KEYS);
+  stmt.setInt(1, data.districtInfo.number);
+  stmt.setString(2, data.districtInfo.title);
+  stmt.setString(3, data.districtInfo.region);
+  stmt.setString(4, data.districtInfo.center);
+  stmt.setString(5, data.districtInfo.range);
+  stmt.setInt(6, data.districtInfo.totalCandidatesRegistered);
+  stmt.setInt(7, data.districtInfo.totalCandidatesCancelled);
+  stmt.setInt(8, data.districtInfo.totalCandidatesInElections);
+  stmt.setInt(9, data.districtInfo.partyCandidatesInElections);
+  stmt.setInt(10, data.districtInfo.selfproposedCandidatesInElections);
+  stmt.executeUpdate();
+  genKey = -1;
+  rs = stmt.generatedKeys;
+  if(rs.next()) {
+   genKey = rs.getInt(1);
+  }
+  
+  data.candidatesInfo.each{ candidateInfo ->
+   stmt = c.prepareStatement(insertCandidate, java.sql.Statement.RETURN_GENERATED_KEYS);  
+stmt.setString(1, candidateInfo.fullName)
+stmt.setString(2, candidateInfo.programLink)
+stmt.setString(3, candidateInfo.programFile)
+stmt.setString(4, candidateInfo.programText)
+stmt.setString(5, candidateInfo.partyListElection)
+stmt.setDate(6, candidateInfo.registrationDate!=null?new java.sql.Date(jsonDateFormat.parse(candidateInfo.registrationDate).time):null);
+stmt.setDate(7, candidateInfo.cancellationDate!=null?new java.sql.Date(jsonDateFormat.parse(candidateInfo.cancellationDate).time):null);
+stmt.setString(8, candidateInfo.cancellationReason)
+stmt.setBoolean(9, candidateInfo.cancelled)
+stmt.setDate(10, candidateInfo.dateOfBirth!=null?new java.sql.Date(jsonDateFormat.parse(candidateInfo.dateOfBirth).time):null);
+stmt.setString(11, candidateInfo.placeOfBirth)
+stmt.setString(12, candidateInfo.citizenship)
+stmt.setString(13, candidateInfo.livesInCountry)
+stmt.setString(14, candidateInfo.education)
+stmt.setString(15, candidateInfo.occupation)
+stmt.setString(16, candidateInfo.partyMembership)
+stmt.setString(17, candidateInfo.address)
+stmt.setString(18, candidateInfo.criminalRecord)
+   stmt.executeUpdate();
+   genKey = -1;
+   rs = stmt.generatedKeys;
+   if(rs.next()) {
+    genKey = rs.getInt(1);
+   }
+  }
+ }
+}
+
+rs = c.createStatement().executeQuery("select count(*) from district;");
+rs.next()
+println "District data inserted: "+rs.getInt(1);
+
+rs = c.createStatement().executeQuery("select count(*) from candidate;");
+rs.next()
+println "Candidates data inserted: "+rs.getInt(1);
+
+}
