@@ -28,11 +28,11 @@ fromparty int not null,
 selfproposed int not null
 );""";
 
-createCandidate = """create table candidate (id int not null primary key auto_increment, fullName nvarchar(255), programLink nvarchar(1024), programFile nvarchar(1024), programText longtext, partyListElection nvarchar(1024), registrationdate date, cancellationdate date, cancellationReason nvarchar(255), cancelled boolean,dateOfBirth date, placeOfBirth nvarchar(1024), citizenship nvarchar(255), livesInCountry nvarchar(255), education nvarchar(255), occupation nvarchar(1024), partyMembership nvarchar(1024), address nvarchar(1024), criminalRecord nvarchar(255))""";
+createCandidate = """create table candidate (id int not null primary key auto_increment, districtid int not null, fullName nvarchar(255), programLink nvarchar(1024), programFile nvarchar(1024), programText longtext, partyListElection nvarchar(1024), registrationdate date, cancellationdate date, cancellationReason nvarchar(255), cancelled boolean,dateOfBirth date, placeOfBirth nvarchar(1024), citizenship nvarchar(255), livesInCountry nvarchar(255), education nvarchar(255), occupation nvarchar(1024), partyMembership nvarchar(1024), address nvarchar(1024), criminalRecord nvarchar(255))""";
 
 insertDistrict = "insert into district(number, title, regionname, regioncenter, regionrange, totalreg, totalcancel, total, fromparty, selfproposed) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-insertCandidate = "insert into candidate (fullName, programLink, programFile, programText, partyListElection, registrationDate, cancellationDate, cancellationReason, cancelled, dateOfBirth, placeOfBirth, citizenship, livesInCountry, education, occupation, partyMembership, address, criminalRecord) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+insertCandidate = "insert into candidate (districtid, fullName, programLink, programFile, programText, partyListElection, registrationDate, cancellationDate, cancellationReason, cancelled, dateOfBirth, placeOfBirth, citizenship, livesInCountry, education, occupation, partyMembership, address, criminalRecord) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
 
 println "Init DB";
 c.createStatement().execute("drop table if exists district");
@@ -61,32 +61,33 @@ for(int i=1;i<=districtsCount;i++) {
   stmt.setInt(9, data.districtInfo.partyCandidatesInElections);
   stmt.setInt(10, data.districtInfo.selfproposedCandidatesInElections);
   stmt.executeUpdate();
-  genKey = -1;
+  districtIdGenKey = -1;
   rs = stmt.generatedKeys;
   if(rs.next()) {
-   genKey = rs.getInt(1);
+   districtIdGenKey = rs.getInt(1);
   }
   
   data.candidatesInfo.each{ candidateInfo ->
    stmt = c.prepareStatement(insertCandidate, java.sql.Statement.RETURN_GENERATED_KEYS);  
-stmt.setString(1, candidateInfo.fullName)
-stmt.setString(2, candidateInfo.programLink)
-stmt.setString(3, candidateInfo.programFile)
-stmt.setString(4, candidateInfo.programText)
-stmt.setString(5, candidateInfo.partyListElection)
-stmt.setDate(6, candidateInfo.registrationDate!=null?new java.sql.Date(jsonDateFormat.parse(candidateInfo.registrationDate).time):null);
-stmt.setDate(7, candidateInfo.cancellationDate!=null?new java.sql.Date(jsonDateFormat.parse(candidateInfo.cancellationDate).time):null);
-stmt.setString(8, candidateInfo.cancellationReason)
-stmt.setBoolean(9, candidateInfo.cancelled)
-stmt.setDate(10, candidateInfo.dateOfBirth!=null?new java.sql.Date(jsonDateFormat.parse(candidateInfo.dateOfBirth).time):null);
-stmt.setString(11, candidateInfo.placeOfBirth)
-stmt.setString(12, candidateInfo.citizenship)
-stmt.setString(13, candidateInfo.livesInCountry)
-stmt.setString(14, candidateInfo.education)
-stmt.setString(15, candidateInfo.occupation)
-stmt.setString(16, candidateInfo.partyMembership)
-stmt.setString(17, candidateInfo.address)
-stmt.setString(18, candidateInfo.criminalRecord)
+stmt.setInt(1, districtIdGenKey);
+stmt.setString(2, candidateInfo.fullName)
+stmt.setString(3, candidateInfo.programLink)
+stmt.setString(4, candidateInfo.programFile)
+stmt.setString(5, candidateInfo.programText)
+stmt.setString(6, candidateInfo.partyListElection)
+stmt.setDate(7, candidateInfo.registrationDate!=null?new java.sql.Date(jsonDateFormat.parse(candidateInfo.registrationDate).time):null);
+stmt.setDate(8, candidateInfo.cancellationDate!=null?new java.sql.Date(jsonDateFormat.parse(candidateInfo.cancellationDate).time):null);
+stmt.setString(9, candidateInfo.cancellationReason)
+stmt.setBoolean(10, candidateInfo.cancelled)
+stmt.setDate(11, candidateInfo.dateOfBirth!=null?new java.sql.Date(jsonDateFormat.parse(candidateInfo.dateOfBirth).time):null);
+stmt.setString(12, candidateInfo.placeOfBirth)
+stmt.setString(13, candidateInfo.citizenship)
+stmt.setString(14, candidateInfo.livesInCountry)
+stmt.setString(15, candidateInfo.education)
+stmt.setString(16, candidateInfo.occupation)
+stmt.setString(17, candidateInfo.partyMembership)
+stmt.setString(18, candidateInfo.address)
+stmt.setString(19, candidateInfo.criminalRecord)
    stmt.executeUpdate();
    genKey = -1;
    rs = stmt.generatedKeys;
