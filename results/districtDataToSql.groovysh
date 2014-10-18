@@ -28,11 +28,14 @@ fromparty int not null,
 selfproposed int not null
 );""";
 
-createCandidate = """create table candidate (id int not null primary key auto_increment, districtid int not null, fullName nvarchar(255), programLink nvarchar(1024), programFile nvarchar(1024), programText longtext, partyListElection nvarchar(1024), registrationdate date, cancellationdate date, cancellationReason nvarchar(255), cancelled boolean,dateOfBirth date, placeOfBirth nvarchar(1024), citizenship nvarchar(255), livesInCountry nvarchar(255), education nvarchar(255), occupation nvarchar(1024), partyMembership nvarchar(1024), address nvarchar(1024), criminalRecord nvarchar(255))""";
+createCandidate = """create table candidate (id int not null primary key auto_increment, districtid int not null, fullName nvarchar(255), programLink nvarchar(1024), programFile nvarchar(1024), programText longtext, partyListElection nvarchar(1024), registrationdate date, cancellationdate date, cancellationReason nvarchar(255), cancelled boolean,dateOfBirth date, placeOfBirth nvarchar(1024), citizenship nvarchar(255), livesInCountry nvarchar(255), education nvarchar(255), occupation nvarchar(1024), partyMembership nvarchar(1024), address nvarchar(1024), criminalRecord nvarchar(255),
+namelast nvarchar(255), namefirst nvarchar(255), namepatr nvarchar(255),
+initlast nvarchar(16), initfirts nvarchar(16), initpatr nvarchar(16)
+)""";
 
 insertDistrict = "insert into district(number, title, regionname, regioncenter, regionrange, totalreg, totalcancel, total, fromparty, selfproposed) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-insertCandidate = "insert into candidate (districtid, fullName, programLink, programFile, programText, partyListElection, registrationDate, cancellationDate, cancellationReason, cancelled, dateOfBirth, placeOfBirth, citizenship, livesInCountry, education, occupation, partyMembership, address, criminalRecord) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+insertCandidate = "insert into candidate (districtid, fullName, programLink, programFile, programText, partyListElection, registrationDate, cancellationDate, cancellationReason, cancelled, dateOfBirth, placeOfBirth, citizenship, livesInCountry, education, occupation, partyMembership, address, criminalRecord, namelast, namefirst, namepatr, initlast, initfirts, initpatr) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
 
 println "Init DB";
 c.createStatement().execute("drop table if exists district");
@@ -88,6 +91,14 @@ stmt.setString(16, candidateInfo.occupation)
 stmt.setString(17, candidateInfo.partyMembership)
 stmt.setString(18, candidateInfo.address)
 stmt.setString(19, candidateInfo.criminalRecord)
+
+nameParts = candidateInfo.fullName.split(" ");
+stmt.setString(20, nameParts[0]);
+stmt.setString(21, nameParts[1]);
+stmt.setString(22, nameParts[2]);
+stmt.setString(23, nameParts[0].substring(0,1));
+stmt.setString(24, nameParts[1].substring(0,1));
+stmt.setString(25, nameParts[2].substring(0,1));
    stmt.executeUpdate();
    genKey = -1;
    rs = stmt.generatedKeys;
